@@ -5,12 +5,15 @@ from numpy import pi
 
 DEFAULT_SEED = 31
 DEFAULT_N_SAMPLES = 5
-DEFAULT_N_DATA_POINTS = 100
+DEFAULT_N_DATA_POINTS = 1000
 DEFAULT_T_RANGE = (-10, 10)
 
-A_RANGE = (0, 1)
-LOG_P_RANGE = (-1, 1)
-C_RANGE = (-1, 1)
+# Sinusoid parameters
+A_RANGE = (0, 3)
+LOG_P_RANGE = (-.5, 2)
+C_RANGE = (-10, 10)
+
+
 SLOPE_RANGE = (-1, 1)
 INTERCEPT_RANGE = (-1, 1)
 

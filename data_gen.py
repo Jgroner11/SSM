@@ -3,10 +3,10 @@ import plotly.graph_objects as go
 from numpy import pi
 
 
-DEFAULT_SEED = 31
-DEFAULT_N_SAMPLES = 4
-DEFAULT_N_DATA_POINTS = 17
-DEFAULT_T_RANGE = (-10, 10)
+SEED = 31
+SAMPLES_PER_CLASS = 4
+N_TIME_STEPS = 17
+T_RANGE = (-10, 10)
 
 # Sinusoid parameters
 A_RANGE = (0, 3)
@@ -19,11 +19,6 @@ INTERCEPT_RANGE = (-7.5, 7.5)
 
 LABEL_LINE = 0
 LABEL_SINUSOID = 1
-
-
-def make_time_grid(n_data_points=DEFAULT_N_DATA_POINTS, t_range=DEFAULT_T_RANGE):
-    return np.linspace(*t_range, n_data_points)
-
 
 def generate_sinusoids(n_samples, t_values, rng):
     a = rng.uniform(*A_RANGE, size=n_samples)
@@ -88,14 +83,14 @@ def stack_curves_as_single_trace(t_values, y_values):
 
 
 def build_labeled_dataset(
-    n_samples_per_class=DEFAULT_N_SAMPLES,
-    n_data_points=DEFAULT_N_DATA_POINTS,
-    t_range=DEFAULT_T_RANGE,
-    seed=DEFAULT_SEED,
+    n_samples_per_class=SAMPLES_PER_CLASS,
+    n_data_points=N_TIME_STEPS,
+    t_range=T_RANGE,
+    seed=SEED,
     shuffle=True,
 ):
     rng = np.random.default_rng(seed)
-    t_values = make_time_grid(n_data_points=n_data_points, t_range=t_range)
+    t_values = np.linspace(*t_range, n_data_points)
 
     sinusoid_x, sinusoid_params = generate_sinusoids(n_samples_per_class, t_values, rng)
     line_x, line_params = generate_lines(n_samples_per_class, t_values, rng)
@@ -140,13 +135,13 @@ def build_labeled_dataset(
 
 
 def build_demo_figures(
-    n_samples=DEFAULT_N_SAMPLES,
-    n_data_points=DEFAULT_N_DATA_POINTS,
-    t_range=DEFAULT_T_RANGE,
-    seed=DEFAULT_SEED,
+    n_samples=SAMPLES_PER_CLASS,
+    n_data_points=N_TIME_STEPS,
+    t_range=T_RANGE,
+    seed=SEED,
 ):
     rng = np.random.default_rng(seed)
-    t_values = make_time_grid(n_data_points=n_data_points, t_range=t_range)
+    t_values = np.linspace(*t_range, n_data_points)
 
     sinusoid_y, _ = generate_sinusoids(n_samples, t_values, rng)
     line_y, _ = generate_lines(n_samples, t_values, rng)
@@ -180,6 +175,5 @@ def build_demo_figures(
 
 
 if __name__ == "__main__":
-    print('hello')
     demo_fig = build_demo_figures()
     demo_fig.show()

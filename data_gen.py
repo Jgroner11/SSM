@@ -33,13 +33,7 @@ def generate_sinusoids(n_samples, t_values, rng):
         + c[:, None]
     )
 
-    params = {
-        "amplitude": a,
-        "period": p,
-        "phase": phi,
-        "offset": c,
-    }
-    return y_values, params
+    return y_values
 
 
 def generate_lines(n_samples, t_values, rng):
@@ -47,11 +41,7 @@ def generate_lines(n_samples, t_values, rng):
     intercept = rng.uniform(*INTERCEPT_RANGE, size=n_samples)
     y_values = slope[:, None] * t_values[None, :] + intercept[:, None]
 
-    params = {
-        "slope": slope,
-        "intercept": intercept,
-    }
-    return y_values, params
+    return y_values
 
 
 def plot_curves(t_values, y_values, title, trace_prefix):
@@ -88,12 +78,13 @@ def build_labeled_dataset(
     t_range=T_RANGE,
     seed=SEED,
     shuffle=True,
+    save_path=None,
 ):
     rng = np.random.default_rng(seed)
     t_values = np.linspace(*t_range, n_data_points)
 
-    sinusoid_x, sinusoid_params = generate_sinusoids(n_samples_per_class, t_values, rng)
-    line_x, line_params = generate_lines(n_samples_per_class, t_values, rng)
+    sinusoid_x = generate_sinusoids(n_samples_per_class, t_values, rng)
+    line_x = generate_lines(n_samples_per_class, t_values, rng)
 
     features = np.vstack([sinusoid_x, line_x])
     labels = np.concatenate(
@@ -102,36 +93,27 @@ def build_labeled_dataset(
             np.full(n_samples_per_class, LABEL_LINE, dtype=int),
         ]
     )
-    curve_type = np.array(
-        ["sinusoid"] * n_samples_per_class + ["line"] * n_samples_per_class,
-        dtype=object,
-    )
-
-    metadata = {
-        "curve_type": curve_type,
-        "sinusoid_params": sinusoid_params,
-        "line_params": line_params,
-    }
 
     if shuffle:
         indices = rng.permutation(features.shape[0])
         features = features[indices]
         labels = labels[indices]
-        metadata["curve_type"] = metadata["curve_type"][indices]
-        metadata["sample_index"] = indices
-    else:
-        metadata["sample_index"] = np.arange(features.shape[0])
 
-    return {
+    data = {
         "t": t_values,
         "X": features,
         "y": labels,
-        "label_map": {
-            LABEL_LINE: "line",
-            LABEL_SINUSOID: "sinusoid",
-        },
-        "metadata": metadata,
     }
+
+    if save_path is not None:
+        np.savez(
+            save_path,
+            t=data["t"],
+            X=data["X"],
+            y=data["y"],
+        )
+
+    return data
 
 
 def build_demo_figures(
@@ -143,8 +125,8 @@ def build_demo_figures(
     rng = np.random.default_rng(seed)
     t_values = np.linspace(*t_range, n_data_points)
 
-    sinusoid_y, _ = generate_sinusoids(n_samples, t_values, rng)
-    line_y, _ = generate_lines(n_samples, t_values, rng)
+    sinusoid_y = generate_sinusoids(n_samples, t_values, rng)
+    line_y = generate_lines(n_samples, t_values, rng)
 
     sinusoid_x, sinusoid_trace_y = stack_curves_as_single_trace(t_values, sinusoid_y)
     line_x, line_trace_y = stack_curves_as_single_trace(t_values, line_y)
@@ -175,5 +157,6 @@ def build_demo_figures(
 
 
 if __name__ == "__main__":
+    data = build_labeled_dataset(save_path="data/labeled_dataset.npz")
     demo_fig = build_demo_figures()
     demo_fig.show()

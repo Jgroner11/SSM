@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
 from data_gen import build_labeled_dataset, SEED
 
@@ -17,34 +18,25 @@ class m1(nn.Module):
         self.e = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
 
     def forward(self, x):
-        T = len(x)
+        squeeze = False
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            squeeze = True
 
-        h = torch.tensor(0.0)
+        T = x.size(1)
+        h = torch.zeros(x.size(0), dtype=x.dtype, device=x.device)
         for t in range(T):
-            h = self.a * h + self.b * x[t] + self.c
+            h = self.a * h + self.b * x[:, t] + self.c
         z = self.w * h + self.e
-        return z
-
-def loss(model : m1, X, y):
-    n, T = X.shape
-    z = torch.zeros(n)
-    for i in range(n):
-        z[i] = model(X[i])
-    p = torch.sigmoid(z)
-    L = - (y * torch.log(p) + (1-y) * torch.log(1-p))
-    loss = torch.mean(L)
-    return loss
-
+        return z[0] if squeeze else z
 
 def accuracy(model: m1, X, y):
-    n = len(X)
-    correct = 0
-    for i in range(n):
-        p = torch.sigmoid(model(X[i])) > 0.5
-        correct += (p.float() == y[i]).item()
-    return correct / n
+    with torch.no_grad():
+        z = model(X)
+        p = torch.sigmoid(z) > 0.5
+        return (p.float() == y).float().mean().item()
 
-def train(n_iters=100):
+def train(n_iters=200, batch_size=10):
     torch.manual_seed(SEED)
     model = m1()
     data = build_labeled_dataset()
@@ -57,27 +49,44 @@ def train(n_iters=100):
     test_y = y[split_idx:]
     X = X[:split_idx]
     y = y[:split_idx]
+    
+    # Create DataLoader for mini-batch training
+    train_dataset = TensorDataset(X, y)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     train_losses = []
     test_losses = []
     train_accuracies = []
     test_accuracies = []
     
     for iter in range(n_iters):
-        optimizer.zero_grad()
-        train_loss = loss(model, X, y)
-        train_loss.backward()
-        optimizer.step()
+        epoch_train_loss = 0.0
+        n_batches = 0
+        
+        # Loop over mini-batches from DataLoader
+        for X_batch, y_batch in train_loader:
+            optimizer.zero_grad()
+            train_z = model(X_batch)
+            train_loss = nn.functional.binary_cross_entropy_with_logits(train_z, y_batch)
+            train_loss.backward()
+            optimizer.step()
+            
+            epoch_train_loss += train_loss.item()
+            n_batches += 1
+        
+        # Average loss over batches for this epoch
+        avg_train_loss = epoch_train_loss / n_batches
         
         # Debug: print parameter values
         if (iter + 1) % 10 == 0:
-            print(f"Iter {iter+1}: a={model.a.item():.6f}, b={model.b.item():.6f}, loss={train_loss.item():.4f}")
+            print(f"Iter {iter+1}: a={model.a.item():.6f}, b={model.b.item():.6f}, avg_loss={avg_train_loss:.4f}")
         
         # Track losses and accuracy
-        train_losses.append(train_loss.item())
+        train_losses.append(avg_train_loss)
         with torch.no_grad():
-            test_loss = loss(model, test_X, test_y)
+            test_z = model(test_X)
+            test_loss = nn.functional.binary_cross_entropy_with_logits(test_z, test_y)
             test_losses.append(test_loss.item())
             train_accuracies.append(accuracy(model, X, y))
             test_accuracies.append(accuracy(model, test_X, test_y))
@@ -86,7 +95,7 @@ def train(n_iters=100):
         if (iter + 1) % 10 == 0:
             print(
                 f"Iter {iter + 1}/{n_iters} | "
-                f"Train Loss: {train_loss.item():.4f} | "
+                f"Avg Train Loss: {avg_train_loss:.4f} | "
                 f"Test Loss: {test_loss.item():.4f} | "
                 f"Train Acc: {train_accuracies[-1]:.3f} | "
                 f"Test Acc: {test_accuracies[-1]:.3f}"

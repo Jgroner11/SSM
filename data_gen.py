@@ -4,7 +4,7 @@ from numpy import pi
 
 
 SEED = 31
-SAMPLES_PER_CLASS = 30
+SAMPLES_PER_CLASS = 50
 N_TIME_STEPS = 100
 T_RANGE = (-1, 1)
 

@@ -4,8 +4,8 @@ from numpy import pi
 
 
 DEFAULT_SEED = 31
-DEFAULT_N_SAMPLES = 5
-DEFAULT_N_DATA_POINTS = 1000
+DEFAULT_N_SAMPLES = 4
+DEFAULT_N_DATA_POINTS = 17
 DEFAULT_T_RANGE = (-10, 10)
 
 # Sinusoid parameters
@@ -14,8 +14,8 @@ LOG_P_RANGE = (-.5, 2)
 C_RANGE = (-10, 10)
 
 
-SLOPE_RANGE = (-1, 1)
-INTERCEPT_RANGE = (-1, 1)
+SLOPE_RANGE = (-.5, .5)
+INTERCEPT_RANGE = (-7.5, 7.5)
 
 LABEL_LINE = 0
 LABEL_SINUSOID = 1
@@ -180,5 +180,6 @@ def build_demo_figures(
 
 
 if __name__ == "__main__":
+    print('hello')
     demo_fig = build_demo_figures()
     demo_fig.show()

@@ -20,7 +20,7 @@ INTERCEPT_RANGE = (-7.5, 7.5)
 LABEL_LINE = 0
 LABEL_SINUSOID = 1
 
-def generate_sinusoids(n_samples, t_values, rng):
+def _generate_sinusoids(n_samples, t_values, rng):
     a = rng.uniform(*A_RANGE, size=n_samples)
     log_p = rng.uniform(*LOG_P_RANGE, size=n_samples)
     p = 10 ** log_p
@@ -36,7 +36,7 @@ def generate_sinusoids(n_samples, t_values, rng):
     return y_values
 
 
-def generate_lines(n_samples, t_values, rng):
+def _generate_lines(n_samples, t_values, rng):
     slope = rng.uniform(*SLOPE_RANGE, size=n_samples)
     intercept = rng.uniform(*INTERCEPT_RANGE, size=n_samples)
     y_values = slope[:, None] * t_values[None, :] + intercept[:, None]
@@ -44,22 +44,7 @@ def generate_lines(n_samples, t_values, rng):
     return y_values
 
 
-def plot_curves(t_values, y_values, title, trace_prefix):
-    fig = go.Figure()
-    for idx, curve in enumerate(y_values, start=1):
-        fig.add_trace(
-            go.Scatter(x=t_values, y=curve, mode="lines", name=f"{trace_prefix} {idx}")
-        )
-
-    fig.update_layout(
-        title=title,
-        xaxis_title="t",
-        yaxis_title="y",
-    )
-    return fig
-
-
-def stack_curves_as_single_trace(t_values, y_values):
+def _stack_curves_as_single_trace(t_values, y_values):
     x_segments = []
     y_segments = []
 
@@ -83,8 +68,8 @@ def build_labeled_dataset(
     rng = np.random.default_rng(seed)
     t_values = np.linspace(*t_range, n_data_points)
 
-    sinusoid_x = generate_sinusoids(n_samples_per_class, t_values, rng)
-    line_x = generate_lines(n_samples_per_class, t_values, rng)
+    sinusoid_x = _generate_sinusoids(n_samples_per_class, t_values, rng)
+    line_x = _generate_lines(n_samples_per_class, t_values, rng)
 
     features = np.vstack([sinusoid_x, line_x])
     labels = np.concatenate(
@@ -116,20 +101,16 @@ def build_labeled_dataset(
     return data
 
 
-def build_demo_figures(
-    n_samples=SAMPLES_PER_CLASS,
-    n_data_points=N_TIME_STEPS,
-    t_range=T_RANGE,
-    seed=SEED,
-):
-    rng = np.random.default_rng(seed)
-    t_values = np.linspace(*t_range, n_data_points)
+def plot_data_fig(data):
+    t_values = data["t"]
+    features = data["X"]
+    labels = data["y"]
 
-    sinusoid_y = generate_sinusoids(n_samples, t_values, rng)
-    line_y = generate_lines(n_samples, t_values, rng)
+    sinusoid_y = features[labels == LABEL_SINUSOID]
+    line_y = features[labels == LABEL_LINE]
 
-    sinusoid_x, sinusoid_trace_y = stack_curves_as_single_trace(t_values, sinusoid_y)
-    line_x, line_trace_y = stack_curves_as_single_trace(t_values, line_y)
+    sinusoid_x, sinusoid_trace_y = _stack_curves_as_single_trace(t_values, sinusoid_y)
+    line_x, line_trace_y = _stack_curves_as_single_trace(t_values, line_y)
 
     fig = go.Figure()
     fig.add_trace(
@@ -153,10 +134,9 @@ def build_demo_figures(
         xaxis_title="t",
         yaxis_title="y",
     )
-    return fig
+    fig.show()
 
 
 if __name__ == "__main__":
     data = build_labeled_dataset(save_path="data/labeled_dataset.npz")
-    demo_fig = build_demo_figures()
-    demo_fig.show()
+    plot_data_fig(data)

@@ -4,18 +4,18 @@ from numpy import pi
 
 
 SEED = 31
-SAMPLES_PER_CLASS = 10
-N_TIME_STEPS = 100
-T_RANGE = (-10, 10)
+SAMPLES_PER_CLASS = 30
+N_TIME_STEPS = 500
+T_RANGE = (-1, 1)
 
 # Sinusoid parameters
-A_RANGE = (0, 3)
-LOG_P_RANGE = (-.5, 2)
-C_RANGE = (-10, 10)
+A_RANGE = (0, .3)
+LOG_P_RANGE = (-1.5, 1)
+C_RANGE = (-1, 1)
 
 
 SLOPE_RANGE = (-.5, .5)
-INTERCEPT_RANGE = (-7.5, 7.5)
+INTERCEPT_RANGE = (-.75, .75)
 
 LABEL_LINE = 0
 LABEL_SINUSOID = 1

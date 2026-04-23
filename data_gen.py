@@ -5,7 +5,7 @@ from numpy import pi
 
 SEED = 31
 SAMPLES_PER_CLASS = 30
-N_TIME_STEPS = 500
+N_TIME_STEPS = 100
 T_RANGE = (-1, 1)
 
 # Sinusoid parameters

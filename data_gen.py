@@ -4,8 +4,8 @@ from numpy import pi
 
 
 SEED = 31
-SAMPLES_PER_CLASS = 4
-N_TIME_STEPS = 17
+SAMPLES_PER_CLASS = 10
+N_TIME_STEPS = 100
 T_RANGE = (-10, 10)
 
 # Sinusoid parameters

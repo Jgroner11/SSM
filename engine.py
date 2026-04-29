@@ -5,34 +5,37 @@ import plotly.graph_objects as go
 from data_gen import build_labeled_dataset, SEED
 
 
-class m3(nn.Module):
+class m4(nn.Module):
     """SSM classifier
         Dynamical systems implementation
-        Transition matrix for hidden state is diagonal
+        Hidden state is a scalar
+        convolution for more efficient training
     """
-    def __init__(self, hidden_size=1):
+    def __init__(self):
         super().__init__()
-        self.hidden_size = hidden_size
-        self.a = nn.Parameter(torch.empty(hidden_size).uniform_(0.95, 0.999))
-        self.b = nn.Parameter(torch.empty(hidden_size).uniform_(-0.5, 0.5))
-        self.c = nn.Parameter(torch.empty(hidden_size).uniform_(-0.1, 0.1))
-        self.w = nn.Parameter(torch.empty(hidden_size).uniform_(-0.5, 0.5))
+
+        r_a = torch.empty(1).uniform_(0.95, 0.999)
+        theta_a = torch.empty(1).uniform_(0, 2 * torch.pi)
+        self.a = nn.Parameter(r_a * torch.exp(1j * theta_a))
+
+        self.b = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
+
+        r_c = torch.empty(1).uniform_(-0.1, 0.1)
+        theta_c = torch.empty(1).uniform_(0, 2 * torch.pi)
+        self.c = nn.Parameter(r_c * torch.exp(1j * theta_c))
+
+        
+        self.w = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
         self.e = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
 
-    def forward(self, x):
-        squeeze = False
-        if x.dim() == 1:
-            x = x.unsqueeze(0)
-            squeeze = True
+    def forward(self, x, mode = "convolution"):
+        if mode in ("conv", "convolution"):
+            return self.forward_convolution(x)
+        elif mode == "recurrent":
+            return self.forward_recurrent(x)
+        else:
+            raise ValueError("mode must be 'conv', 'convolution', or 'recurrent'")
 
-        T = x.size(1)
-        h = torch.zeros(x.size(0), self.hidden_size, dtype=x.dtype, device=x.device)
-        for t in range(T):
-            x_t = x[:, t].unsqueeze(1)
-            h = self.a * h + self.b * x_t + self.c
-        z = h @ self.w + self.e
-        return z[0] if squeeze else z
-    
     def forward_recurrent(self, x):
         squeeze = False
         if x.dim() == 1:
@@ -40,41 +43,16 @@ class m3(nn.Module):
             squeeze = True
 
         T = x.size(1)
-        h = torch.zeros(x.size(0), self.hidden_size, dtype=x.dtype, device=x.device)
+        h = torch.zeros(x.size(0), dtype=x.dtype, device=x.device)
         for t in range(T):
-            x_t = x[:, t].unsqueeze(1)
-            h = self.a * h + self.b * x_t + self.c
-        z = h @ self.w + self.e
+            h = self.a * h + self.b * x[:, t] + self.c
+        z = self.w * h + self.e
         return z[0] if squeeze else z
-    
+
     def forward_convolution(self, x):
-        # This implementation only computes the final hidden state because that is all that is needed for classification
-        squeeze = False
-        if x.dim() == 1:
-            x = x.unsqueeze(0)
-            squeeze = True
+        pass
 
-        T = x.size(1)
-        if T == 0:
-            h = torch.zeros(x.size(0), self.hidden_size, dtype=x.dtype, device=x.device)
-        else:
-            powers = torch.pow(
-                self.a.unsqueeze(0),
-                torch.arange(T - 1, -1, -1, device=x.device, dtype=x.dtype).unsqueeze(1),
-            )
-            h = self.b * (x.unsqueeze(-1) * powers.unsqueeze(0)).sum(dim=1)
-            near_one = torch.isclose(self.a, torch.ones_like(self.a))
-            c_contrib = torch.where(
-                near_one,
-                self.c * T,
-                self.c * (1 - torch.pow(self.a, T)) / (1 - self.a),
-            )
-            h = h + c_contrib
-
-        z = h @ self.w + self.e
-        return z[0] if squeeze else z
-
-def accuracy(model: m3, X, y):
+def accuracy(model: m4, X, y):
     with torch.no_grad():
         z = model(X)
         p = torch.sigmoid(z) > 0.5
@@ -82,7 +60,7 @@ def accuracy(model: m3, X, y):
 
 def train(n_iters=200, batch_size=10):
     torch.manual_seed(SEED)
-    model = m3(hidden_size=10)
+    model = m4(hidden_size=10)
     data = build_labeled_dataset()
     X = torch.Tensor(data["X"])
     y = torch.Tensor(data["y"]).float()

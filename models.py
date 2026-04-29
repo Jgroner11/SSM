@@ -29,7 +29,6 @@ class m1(nn.Module):
     
 class m2(nn.Module):
     """SSM classifier
-        Dynamical systems implementation
         Hidden state is a scalar
         convolution for more efficient training
     """
@@ -203,7 +202,6 @@ class m4(nn.Module):
 
 class m5(nn.Module):
     """SSM classifier
-        Dynamical systems implementation
         Hidden state is a diagonal matrix
         hidden state is complex valued
         convolution for more efficient training
@@ -272,9 +270,8 @@ class m5(nn.Module):
 
 class m6(nn.Module):
     """SSM classifier
-        Dynamical systems implementation
         Hidden state is a scalar
-        Nonlinear sandwhich
+        Nonlinearities
         convolution for more efficient training
         a bounded between zero and 1 by sigmoid
     """
@@ -327,3 +324,4 @@ class m6(nn.Module):
         r = torch.tanh(self.w * h + self.e)
         z = self.gamma * r + self.delta
         return z[0] if squeeze else z
+    

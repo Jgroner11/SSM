@@ -13,19 +13,19 @@ class m4(nn.Module):
     """
     def __init__(self):
         super().__init__()
-
-        r_a = torch.empty(1).uniform_(0.95, 0.999)
+        r_a = torch.empty(1).uniform_(0.5, 0.999)
         theta_a = torch.empty(1).uniform_(0, 2 * torch.pi)
         self.a = nn.Parameter(r_a * torch.exp(1j * theta_a))
 
         self.b = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
 
-        r_c = torch.empty(1).uniform_(-0.1, 0.1)
+        r_c = torch.empty(1).uniform_(0, 0.1)
         theta_c = torch.empty(1).uniform_(0, 2 * torch.pi)
         self.c = nn.Parameter(r_c * torch.exp(1j * theta_c))
 
-        
-        self.w = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
+        r_w = torch.empty(1).uniform_(0, 0.5)
+        theta_w = torch.empty(1).uniform_(0, 2 * torch.pi)
+        self.w = nn.Parameter(r_w * torch.exp(1j * theta_w))
         self.e = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
 
     def forward(self, x, mode = "convolution"):
@@ -43,14 +43,24 @@ class m4(nn.Module):
             squeeze = True
 
         T = x.size(1)
-        h = torch.zeros(x.size(0), dtype=x.dtype, device=x.device)
+        h = torch.zeros(x.size(0), dtype=self.a.dtype, device=x.device)
         for t in range(T):
             h = self.a * h + self.b * x[:, t] + self.c
-        z = self.w * h + self.e
+        z = (self.w * h).real + self.e
         return z[0] if squeeze else z
 
     def forward_convolution(self, x):
-        pass
+        squeeze = False
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            squeeze = True
+
+        T = x.size(1)
+        powers = self.a.pow(torch.arange(T - 1, -1, -1, dtype=x.dtype, device=x.device))
+        h = (self.b * x * powers).sum(dim=1) + self.c * powers.sum()
+        z = (self.w * h).real + self.e
+        return z[0] if squeeze else z
+
 
 def accuracy(model: m4, X, y):
     with torch.no_grad():

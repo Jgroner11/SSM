@@ -325,3 +325,78 @@ class m6(nn.Module):
         z = self.gamma * r + self.delta
         return z[0] if squeeze else z
     
+
+class m7(nn.Module):
+    """SSM classifier
+        Transition matrix for hidden state is diagonal
+        convolution for more efficient training
+        nonlinearities
+        a bounded between zero and 1 by sigmoid
+    """
+    def __init__(self, hidden_size=1):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.alpha = nn.Parameter(torch.empty(1).uniform_(0.5, 1.5))
+        self.beta  = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
+        self.a = nn.Parameter(torch.empty(hidden_size).uniform_(2.0, 4.0))
+        self.b = nn.Parameter(torch.empty(hidden_size).uniform_(-0.5, 0.5))
+        self.c = nn.Parameter(torch.empty(hidden_size).uniform_(-0.1, 0.1))
+        self.w = nn.Parameter(torch.empty(hidden_size).uniform_(-0.5, 0.5))
+        self.e = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
+        self.gamma = nn.Parameter(torch.empty(1).uniform_(0.5, 1.5))
+        self.delta = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
+
+    def forward(self, x, mode = "convolution"):
+        if mode in ("conv", "convolution"):
+            return self.forward_convolution(x)
+        elif mode == "recurrent":
+            return self.forward_recurrent(x)
+        else:
+            raise ValueError("mode must be 'conv', 'convolution', or 'recurrent'")
+    
+    def forward_recurrent(self, x):
+        squeeze = False
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            squeeze = True
+
+        T = x.size(1)
+        u = torch.tanh(self.alpha * x + self.beta)
+        a = torch.sigmoid(self.a)
+        h = torch.zeros(u.size(0), self.hidden_size, dtype=u.dtype, device=u.device)
+        for t in range(T):
+            u_t = u[:, t].unsqueeze(1)
+            h = a * h + self.b * u_t + self.c
+        r = torch.tanh(h @ self.w + self.e)
+        z = self.gamma * r + self.delta
+        return z[0] if squeeze else z
+    
+    def forward_convolution(self, x):
+        # This implementation only computes the final hidden state because that is all that is needed for classification
+        squeeze = False
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            squeeze = True
+
+        T = x.size(1)
+        u = torch.tanh(self.alpha * x + self.beta)
+        a = torch.sigmoid(self.a)
+        if T == 0:
+            h = torch.zeros(u.size(0), self.hidden_size, dtype=u.dtype, device=u.device)
+        else:
+            powers = torch.pow(
+                a.unsqueeze(0),
+                torch.arange(T - 1, -1, -1, device=u.device, dtype=u.dtype).unsqueeze(1),
+            )
+            h = self.b * (u.unsqueeze(-1) * powers.unsqueeze(0)).sum(dim=1)
+            near_one = torch.isclose(a, torch.ones_like(a))
+            c_contrib = torch.where(
+                near_one,
+                self.c * T,
+                self.c * (1 - torch.pow(a, T)) / (1 - a),
+            )
+            h = h + c_contrib
+
+        r = torch.tanh(h @ self.w + self.e)
+        z = self.gamma * r + self.delta
+        return z[0] if squeeze else z

@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
 from data_gen import build_labeled_dataset, SEED
-from models import m6
+from models import m7
 
 def accuracy(model : nn.Module, X, y):
     with torch.no_grad():
@@ -13,7 +13,7 @@ def accuracy(model : nn.Module, X, y):
 
 def train(n_iters=200, batch_size=10):
     torch.manual_seed(SEED)
-    model = m6()
+    model = m7(hidden_size=10)
     data = build_labeled_dataset()
     X = torch.Tensor(data["X"])
     y = torch.Tensor(data["y"]).float()
@@ -63,8 +63,7 @@ def train(n_iters=200, batch_size=10):
             test_accuracies.append(accuracy(model, test_X, test_y))
         
         if (iter + 1) % 10 == 0:
-            a_value = model.a.detach().cpu().item()
-            print(f"Iter {iter + 1}/{n_iters} | loss={avg_train_loss:.6f} | a={a_value:.6f}")
+            print(f"Iter {iter + 1}/{n_iters} | loss={avg_train_loss:.6f}")
     
     # Plot train and test accuracy
     fig = go.Figure()

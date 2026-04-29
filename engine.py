@@ -3,66 +3,9 @@ from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
 from data_gen import build_labeled_dataset, SEED
+from models import m5
 
-
-class m4(nn.Module):
-    """SSM classifier
-        Dynamical systems implementation
-        Hidden state is a scalar
-        convolution for more efficient training
-    """
-    def __init__(self):
-        super().__init__()
-        r_a = torch.empty(1).uniform_(0.5, 0.999)
-        theta_a = torch.empty(1).uniform_(0, 2 * torch.pi)
-        self.a = nn.Parameter(r_a * torch.exp(1j * theta_a))
-
-        self.b = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
-
-        r_c = torch.empty(1).uniform_(0, 0.1)
-        theta_c = torch.empty(1).uniform_(0, 2 * torch.pi)
-        self.c = nn.Parameter(r_c * torch.exp(1j * theta_c))
-
-        r_w = torch.empty(1).uniform_(0, 0.5)
-        theta_w = torch.empty(1).uniform_(0, 2 * torch.pi)
-        self.w = nn.Parameter(r_w * torch.exp(1j * theta_w))
-        self.e = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
-
-    def forward(self, x, mode = "convolution"):
-        if mode in ("conv", "convolution"):
-            return self.forward_convolution(x)
-        elif mode == "recurrent":
-            return self.forward_recurrent(x)
-        else:
-            raise ValueError("mode must be 'conv', 'convolution', or 'recurrent'")
-
-    def forward_recurrent(self, x):
-        squeeze = False
-        if x.dim() == 1:
-            x = x.unsqueeze(0)
-            squeeze = True
-
-        T = x.size(1)
-        h = torch.zeros(x.size(0), dtype=self.a.dtype, device=x.device)
-        for t in range(T):
-            h = self.a * h + self.b * x[:, t] + self.c
-        z = (self.w * h).real + self.e
-        return z[0] if squeeze else z
-
-    def forward_convolution(self, x):
-        squeeze = False
-        if x.dim() == 1:
-            x = x.unsqueeze(0)
-            squeeze = True
-
-        T = x.size(1)
-        powers = self.a.pow(torch.arange(T - 1, -1, -1, dtype=x.dtype, device=x.device))
-        h = (self.b * x * powers).sum(dim=1) + self.c * powers.sum()
-        z = (self.w * h).real + self.e
-        return z[0] if squeeze else z
-
-
-def accuracy(model: m4, X, y):
+def accuracy(model : nn.Module, X, y):
     with torch.no_grad():
         z = model(X)
         p = torch.sigmoid(z) > 0.5
@@ -70,7 +13,7 @@ def accuracy(model: m4, X, y):
 
 def train(n_iters=200, batch_size=10):
     torch.manual_seed(SEED)
-    model = m4(hidden_size=10)
+    model = m5(hidden_size=10)
     data = build_labeled_dataset()
     X = torch.Tensor(data["X"])
     y = torch.Tensor(data["y"]).float()
@@ -119,9 +62,8 @@ def train(n_iters=200, batch_size=10):
             train_accuracies.append(accuracy(model, X, y))
             test_accuracies.append(accuracy(model, test_X, test_y))
         
-        # Print progress every 10 iterations
         if (iter + 1) % 10 == 0:
-            print(f"Iter {iter + 1}/{n_iters}")
+            print(f"Iter {iter + 1}/{n_iters} | loss={avg_train_loss:.6f}")
     
     # Plot train and test accuracy
     fig = go.Figure()

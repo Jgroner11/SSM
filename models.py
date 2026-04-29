@@ -276,12 +276,13 @@ class m6(nn.Module):
         Hidden state is a scalar
         Nonlinear sandwhich
         convolution for more efficient training
+        a bounded between zero and 1 by sigmoid
     """
     def __init__(self):
         super().__init__()
         self.alpha = nn.Parameter(torch.empty(1).uniform_(0.5, 1.5))
         self.beta  = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
-        self.a = nn.Parameter(torch.empty(1).uniform_(0.95, 0.999))
+        self.a = nn.Parameter(torch.empty(1).uniform_(2.0, 4.0))
         self.b = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
         self.c = nn.Parameter(torch.empty(1).uniform_(-0.1, 0.1))
         self.w = nn.Parameter(torch.empty(1).uniform_(-0.5, 0.5))
@@ -308,7 +309,7 @@ class m6(nn.Module):
         u = torch.tanh(self.alpha * x + self.beta)
         h = torch.zeros(u.size(0), dtype=u.dtype, device=x.device)
         for t in range(T):
-            h = self.a * h + self.b * u[:, t] + self.c
+            h = torch.sigmoid(self.a) * h + self.b * u[:, t] + self.c
         r = torch.tanh(self.w * h + self.e)
         z = self.gamma * r + self.delta
         return z[0] if squeeze else z
@@ -321,7 +322,7 @@ class m6(nn.Module):
         T = x.size(1)
 
         u = torch.tanh(self.alpha * x + self.beta)        
-        powers = self.a.pow(torch.arange(T - 1, -1, -1, dtype=u.dtype, device=u.device))
+        powers = torch.sigmoid(self.a).pow(torch.arange(T - 1, -1, -1, dtype=u.dtype, device=u.device))
         h = (self.b * u * powers).sum(dim=1) + self.c * powers.sum()
         r = torch.tanh(self.w * h + self.e)
         z = self.gamma * r + self.delta

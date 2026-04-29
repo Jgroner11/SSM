@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
 from data_gen import build_labeled_dataset, SEED
-from models import m7
+from models import m8
 
 def accuracy(model : nn.Module, X, y):
     with torch.no_grad():
@@ -11,9 +11,9 @@ def accuracy(model : nn.Module, X, y):
         p = torch.sigmoid(z) > 0.5
         return (p.float() == y).float().mean().item()
 
-def train(n_iters=200, batch_size=10):
+def train(n_iters=1000, batch_size=10):
     torch.manual_seed(SEED)
-    model = m7(hidden_size=10)
+    model = m8(hidden_size=10)
     data = build_labeled_dataset()
     X = torch.Tensor(data["X"])
     y = torch.Tensor(data["y"]).float()

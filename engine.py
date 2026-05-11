@@ -1,8 +1,9 @@
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
-from data_gen import build_labeled_dataset, SEED
+from data_gen import SEED
 from models import m8
 
 def accuracy(model : nn.Module, X, y):
@@ -11,12 +12,12 @@ def accuracy(model : nn.Module, X, y):
         p = torch.sigmoid(z) > 0.5
         return (p.float() == y).float().mean().item()
 
-def train(n_iters=1000, batch_size=10):
+def train(n_iters=4000, batch_size=10):
     torch.manual_seed(SEED)
     model = m8(hidden_size=10)
-    data = build_labeled_dataset()
-    X = torch.Tensor(data["X"])
-    y = torch.Tensor(data["y"]).float()
+    with np.load("data/sins_vs_lines.npz") as data:
+        X = torch.Tensor(data["X"])
+        y = torch.Tensor(data["y"]).float()
     
     # 90/10 train-test split
     split_idx = int(len(X) * 0.9)

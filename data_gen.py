@@ -138,5 +138,5 @@ def plot_data_fig(data):
 
 
 if __name__ == "__main__":
-    data = build_labeled_dataset(save_path="data/labeled_dataset.npz")
+    data = build_labeled_dataset(save_path="data/sins_vs_lines.npz")
     plot_data_fig(data)

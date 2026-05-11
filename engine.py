@@ -12,10 +12,10 @@ def accuracy(model : nn.Module, X, y):
         p = torch.sigmoid(z) > 0.5
         return (p.float() == y).float().mean().item()
 
-def train(n_iters=4000, batch_size=10):
+def train(n_iters=400, batch_size=10):
     torch.manual_seed(SEED)
     model = m8(hidden_size=10)
-    with np.load("data/sins_vs_lines.npz") as data:
+    with np.load("data/sins_vs_flat_lines.npz") as data:
         X = torch.Tensor(data["X"])
         y = torch.Tensor(data["y"]).float()
     

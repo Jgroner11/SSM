@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 from numpy import pi
 
 
-SEED = 31
+SEED = 32
 SAMPLES_PER_CLASS = 50
 N_TIME_STEPS = 100
 T_RANGE = (-1, 1)

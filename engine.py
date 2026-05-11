@@ -6,15 +6,19 @@ import plotly.graph_objects as go
 from data_gen import SEED
 from models import m8
 
+def default_model():
+    return m8(hidden_size=10)
+
+
 def accuracy(model : nn.Module, X, y):
     with torch.no_grad():
         z = model(X)
         p = torch.sigmoid(z) > 0.5
         return (p.float() == y).float().mean().item()
 
-def train(n_iters=400, batch_size=10):
+def train(n_iters=400, batch_size=10, model_factory=default_model, plot=True):
     torch.manual_seed(SEED)
-    model = m8(hidden_size=10)
+    model = model_factory()
     with np.load("data/sins_vs_flat_lines.npz") as data:
         X = torch.Tensor(data["X"])
         y = torch.Tensor(data["y"]).float()
@@ -66,18 +70,25 @@ def train(n_iters=400, batch_size=10):
         if (iter + 1) % 10 == 0:
             print(f"Iter {iter + 1}/{n_iters} | loss={avg_train_loss:.6f}")
     
-    # Plot train and test accuracy
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(y=train_accuracies, mode='lines', name='Train Accuracy'))
-    fig.add_trace(go.Scatter(y=test_accuracies, mode='lines', name='Test Accuracy'))
-    fig.update_layout(
-        title='Training Accuracy',
-        xaxis_title='Iteration',
-        yaxis_title='Accuracy',
-        yaxis=dict(range=[0, 1]),
-        hovermode='x unified'
-    )
-    fig.show()
+    if plot:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(y=train_accuracies, mode='lines', name='Train Accuracy'))
+        fig.add_trace(go.Scatter(y=test_accuracies, mode='lines', name='Test Accuracy'))
+        fig.update_layout(
+            title='Training Accuracy',
+            xaxis_title='Iteration',
+            yaxis_title='Accuracy',
+            yaxis=dict(range=[0, 1]),
+            hovermode='x unified'
+        )
+        fig.show()
+
+    return {
+        "train_losses": train_losses,
+        "test_losses": test_losses,
+        "train_accuracies": train_accuracies,
+        "test_accuracies": test_accuracies,
+    }
 
 if __name__ == "__main__":
     train()

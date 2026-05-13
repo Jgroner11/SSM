@@ -14,8 +14,8 @@ LOG_P_RANGE = (-.5, -.5)
 C_RANGE = (-1, 1)
 
 
-SLOPE_RANGE = (0, 0)
-INTERCEPT_RANGE = (-1, 1)
+SLOPE_RANGE = (-.5, .5)
+INTERCEPT_RANGE = (-.75, .75)
 
 LABEL_LINE = 0
 LABEL_SINUSOID = 1
@@ -138,5 +138,5 @@ def plot_data_fig(data):
 
 
 if __name__ == "__main__":
-    data = build_labeled_dataset(save_path="data/sins_vs_flat_lines.npz")
+    data = build_labeled_dataset(save_path="data/sins_vs_lines.npz")
     plot_data_fig(data)

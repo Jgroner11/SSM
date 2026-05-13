@@ -45,7 +45,7 @@ def accuracy(model : nn.Module, X, y):
 def train(n_iters=100, batch_size=10, model_factory=m8, plot=True):
     torch.manual_seed(SEED)
     model = model_factory()
-    with np.load("data/sins_vs_flat_lines.npz") as data:
+    with np.load("data/sins_vs_lines.npz") as data:
         X = torch.Tensor(data["X"])
         y = torch.Tensor(data["y"]).float()
     

@@ -1,3 +1,7 @@
+import sys
+sys.path.append("./mamba-cpu")
+from mamba_ssm import Mamba
+
 import numpy as np
 import torch
 from torch import nn
@@ -6,9 +10,31 @@ import plotly.graph_objects as go
 from data_gen import SEED
 from models import m8
 
-def default_model():
-    return m8(hidden_size=10)
 
+
+class m9(nn.Module):
+    """ Mamba implementation
+        convert hidden_size becomes both the hidden state size and the embedding size
+        tanh nonlinearity on final sequence embedding before computing logit
+    """
+    def __init__(self, hidden_size=10):
+        super().__init__()
+
+        self.embed = nn.Linear(1, hidden_size)
+        self.ssm = Mamba(
+            d_model=hidden_size, # embedding size
+            d_state=hidden_size, # hidden state size
+            d_conv=1, # local convolutions on input sequence
+            expand=1, # multiplier to expand the input embedding
+        )
+        self.head = nn.Linear(hidden_size, 1)
+
+    def forward(self, x):
+        x = x.unsqueeze(-1)
+        x = self.embed(x)
+        x = self.ssm(x)
+        x = torch.tanh(x[:, -1, :])
+        return self.head(x).squeeze(-1)
 
 def accuracy(model : nn.Module, X, y):
     with torch.no_grad():
@@ -16,7 +42,7 @@ def accuracy(model : nn.Module, X, y):
         p = torch.sigmoid(z) > 0.5
         return (p.float() == y).float().mean().item()
 
-def train(n_iters=400, batch_size=10, model_factory=default_model, plot=True):
+def train(n_iters=100, batch_size=10, model_factory=m8, plot=True):
     torch.manual_seed(SEED)
     model = model_factory()
     with np.load("data/sins_vs_flat_lines.npz") as data:
@@ -34,7 +60,7 @@ def train(n_iters=400, batch_size=10, model_factory=default_model, plot=True):
     train_dataset = TensorDataset(X, y)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=.01)
     train_losses = []
     test_losses = []
     train_accuracies = []
@@ -91,4 +117,4 @@ def train(n_iters=400, batch_size=10, model_factory=default_model, plot=True):
     }
 
 if __name__ == "__main__":
-    train()
+    train(model_factory=m9)

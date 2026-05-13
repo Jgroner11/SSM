@@ -11,7 +11,7 @@ T_RANGE = (-1, 1)
 # Sinusoid parameters
 A_RANGE = (.3, .3)
 LOG_P_RANGE = (-.5, -.5)
-C_RANGE = (-1, 1)
+C_RANGE = (-.8, .8)
 
 
 SLOPE_RANGE = (-.5, .5)

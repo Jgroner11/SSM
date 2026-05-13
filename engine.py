@@ -1,7 +1,3 @@
-import sys
-sys.path.append("./mamba-cpu")
-from mamba_ssm import Mamba
-
 import numpy as np
 import torch
 from torch import nn
@@ -9,32 +5,6 @@ from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
 from data_gen import SEED
 from models import m8
-
-
-
-class m9(nn.Module):
-    """ Mamba implementation
-        convert hidden_size becomes both the hidden state size and the embedding size
-        tanh nonlinearity on final sequence embedding before computing logit
-    """
-    def __init__(self, hidden_size=10):
-        super().__init__()
-
-        self.embed = nn.Linear(1, hidden_size)
-        self.ssm = Mamba(
-            d_model=hidden_size, # embedding size
-            d_state=hidden_size, # hidden state size
-            d_conv=1, # local convolutions on input sequence
-            expand=1, # multiplier to expand the input embedding
-        )
-        self.head = nn.Linear(hidden_size, 1)
-
-    def forward(self, x):
-        x = x.unsqueeze(-1)
-        x = self.embed(x)
-        x = self.ssm(x)
-        x = torch.tanh(x[:, -1, :])
-        return self.head(x).squeeze(-1)
 
 def accuracy(model : nn.Module, X, y):
     with torch.no_grad():
@@ -117,4 +87,4 @@ def train(n_iters=100, batch_size=10, model_factory=m8, plot=True):
     }
 
 if __name__ == "__main__":
-    train(model_factory=m9)
+    train()

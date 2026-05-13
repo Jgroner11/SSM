@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 
 from engine import train
-from models import m1, m2, m3, m4, m5, m6, m7, m8
+from models import m1, m2, m3, m4, m5, m6, m7, m8, m9
 
 
 MODELS = {
@@ -13,6 +13,7 @@ MODELS = {
     "m6": m6,
     "m7": lambda: m7(hidden_size=10),
     "m8": lambda: m8(hidden_size=10),
+    "m9": m9,
 }
 
 

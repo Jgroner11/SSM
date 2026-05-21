@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 import plotly.graph_objects as go
-from data_gen import SEED
+from data_gen import SEED, SAVE_PATH
 from models import m8
 
 def accuracy(model : nn.Module, X, y):
@@ -15,7 +15,7 @@ def accuracy(model : nn.Module, X, y):
 def train(n_iters=100, batch_size=10, model_factory=m8, plot=True):
     torch.manual_seed(SEED)
     model = model_factory()
-    with np.load("data/sins_vs_lines.npz") as data:
+    with np.load(SAVE_PATH) as data:
         X = torch.Tensor(data["X"])
         y = torch.Tensor(data["y"]).float()
     

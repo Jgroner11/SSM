@@ -2,6 +2,7 @@ import numpy as np
 import plotly.graph_objects as go
 from numpy import pi
 
+SAVE_PATH = "data/sins_vs_lines.npz"
 
 SEED = 32
 SAMPLES_PER_CLASS = 50
@@ -138,5 +139,5 @@ def plot_data_fig(data):
 
 
 if __name__ == "__main__":
-    data = build_labeled_dataset(save_path="data/sins_vs_lines.npz")
+    data = build_labeled_dataset(save_path=SAVE_PATH)
     plot_data_fig(data)

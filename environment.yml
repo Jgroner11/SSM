@@ -1,0 +1,17 @@
+name: ssm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pytorch
+  - torchvision
+  - torchaudio
+  - numpy
+  - plotly
+  - einops
+  - transformers
+  - huggingface_hub
+  - tokenizers
+  - safetensors
+  - tqdm
+prefix: C:\Users\jacob\miniforge3\envs\ssm

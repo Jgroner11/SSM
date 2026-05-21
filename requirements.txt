@@ -1,0 +1,5 @@
+einops
+numpy
+plotly
+torch
+transformers
